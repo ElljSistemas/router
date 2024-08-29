@@ -207,13 +207,16 @@ abstract class Dispatch
      */
     protected function captureRequestBody(): array
     {
+        $data = [];
         if ($this->httpMethod !== 'GET' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
             $input = file_get_contents('php://input');
             $jsonData = json_decode($input, true);
 
             if (json_last_error() === JSON_ERROR_NONE) {
-                return  array_merge($this->data ?? [], $jsonData);
+                $data =  array_merge($this->data ?? [], $jsonData);
             }
         }
+
+        return $data;
     }
 }
