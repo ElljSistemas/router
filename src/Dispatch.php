@@ -66,7 +66,7 @@ abstract class Dispatch
     public function __construct(string $projectUrl, ?string $separator = ":")
     {
         $this->projectUrl = (substr($projectUrl, "-1") == "/" ? substr($projectUrl, 0, -1) : $projectUrl);
-        if(isset($_SERVER['ROUTER_TYPE'])) {
+        if (isset($_SERVER['ROUTER_TYPE'])) {
             $this->path = rtrim(($_SERVER['PATH_INFO'] ?? "/"), "/");
         } else {
             $this->path = rtrim((filter_input(INPUT_GET, "route", FILTER_DEFAULT) ?? "/"), "/");
@@ -200,5 +200,20 @@ abstract class Dispatch
         }
 
         return $this->execute();
+    }
+
+    /**
+     * @return array 
+     */
+    protected function captureRequestBody(): array
+    {
+        if ($this->httpMethod !== 'GET' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
+            $input = file_get_contents('php://input');
+            $jsonData = json_decode($input, true);
+
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return  array_merge($this->data ?? [], $jsonData);
+            }
+        }
     }
 }

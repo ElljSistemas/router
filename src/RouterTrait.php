@@ -36,9 +36,13 @@ trait RouterTrait
         foreach ($keys as $key) {
             $this->data[$key[1]] = ($routeDiff[$offset++] ?? null);
         }
-
         $route = (!$this->group ? $route : "/{$this->group}{$route}");
+
         $data = $this->data;
+        if($_data = $this->captureRequestBody()) {
+            $data = $this->data && is_array($this->data) ? array_merge($_data, $this->data) : $_data;
+        }
+
         $namespace = $this->namespace;
         $middleware = $middleware ?? (!empty($this->middleware[$this->group]) ? $this->middleware[$this->group] : null);
         $router = function () use ($method, $handler, $data, $route, $name, $namespace, $middleware) {
