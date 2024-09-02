@@ -203,20 +203,33 @@ abstract class Dispatch
     }
 
     /**
-     * @return array 
+     * Captura os dados da requisição, independentemente do método HTTP.
+     *
+     * @return array
      */
     protected function captureRequestBody(): array
     {
         $data = [];
-        if ($this->httpMethod !== 'GET' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
-            $input = file_get_contents('php://input');
-            $jsonData = json_decode($input, true);
 
-            if (json_last_error() === JSON_ERROR_NONE) {
-                $data =  array_merge($this->data ?? [], $jsonData);
+        if ($this->httpMethod === "GET") {
+            $data = $_GET;
+        }
+
+        if (in_array($this->httpMethod, ['POST', 'PUT', 'PATCH', 'DELETE'])) {
+            if (isset($_SERVER['CONTENT_TYPE'])) {
+                if (strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
+                    $input = file_get_contents('php://input');
+                    $jsonData = json_decode($input, true);
+
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $data = array_merge($data, $jsonData);
+                    }
+                } elseif (strpos($_SERVER['CONTENT_TYPE'], 'application/x-www-form-urlencoded') !== false) {
+                    $data = array_merge($data, $_POST);
+                }
             }
         }
 
-        return $data;
+        return array_merge($this->data ?? [], $data);
     }
 }
