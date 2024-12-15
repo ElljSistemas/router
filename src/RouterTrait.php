@@ -39,7 +39,7 @@ trait RouterTrait
         $route = (!$this->group ? $route : "/{$this->group}{$route}");
 
         $data = $this->data;
-        if($_data = $this->captureRequestBody()) {
+        if ($_data = $this->captureRequestBody()) {
             $data = $this->data && is_array($this->data) ? array_merge($_data, $this->data) : $_data;
         }
 
@@ -83,9 +83,16 @@ trait RouterTrait
             return;
         }
 
-        if (in_array($this->httpMethod, ["PUT", "PATCH", "DELETE"]) && !empty($_SERVER['CONTENT_LENGTH'])) {
-            parse_str(file_get_contents('php://input', false, null, 0, $_SERVER['CONTENT_LENGTH']), $putPatch);
-            $this->data = $putPatch;
+        if (in_array($this->httpMethod, ['PUT', 'PATCH', 'DELETE']) && !empty($_SERVER['CONTENT_LENGTH'])) {
+            $body = file_get_contents('php://input', false, null, 0, $_SERVER['CONTENT_LENGTH']);
+
+            // Detecta se o corpo da requisição é JSON
+            if ($this->isJson($body)) {
+                $this->data = json_decode($body, true);
+            } else {
+                parse_str($body, $putPatch);
+                $this->data = $putPatch;
+            }
 
             unset($this->data["_method"]);
             return;
@@ -93,6 +100,19 @@ trait RouterTrait
 
         $this->data = [];
     }
+
+    /**
+     * Verifica se a string é um JSON válido
+     * 
+     * @param string $string
+     * @return bool
+     */
+    protected function isJson($string): bool
+    {
+        json_decode($string);
+        return (json_last_error() === JSON_ERROR_NONE);
+    }
+
 
     /**
      * @return bool
